@@ -1,0 +1,52 @@
+# Compilacion y artefactos de Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### Secretos y configuracion local ###
+.env
+*.env
+!.env.example
+application-local.properties
+*.log
+logs/
+
+### STS / Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Sistema operativo ###
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+### Respaldos y archivos temporales ###
+*.zip
+*.rar
+*.bak
+*.tmp

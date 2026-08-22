@@ -1,0 +1,22 @@
+# Ejemplo de mongod.cfg endurecido.
+# En Windows suele estar en: C:\Program Files\MongoDB\Server\<version>\bin\mongod.cfg
+#
+# Pasos:
+#   1. Crea el usuario admin y el usuario de la app (scripts/crear-usuarios.mongosh.js)
+#   2. Copia este archivo sobre tu mongod.cfg
+#   3. Reinicia el servicio:  net stop MongoDB && net start MongoDB
+#   4. La app debe conectarse con credenciales via MONGO_URI
+
+# Solo escucha en localhost, jamas en 0.0.0.0
+net:
+  port: 27017
+  bindIp: 127.0.0.1
+
+security:
+  authorization: enabled
+
+# Cifrado en transito (opcional pero recomendado en produccion)
+# net:
+#   tls:
+#     mode: requireTLS
+#     certificateKeyFile: /etc/ssl/mongo.pem

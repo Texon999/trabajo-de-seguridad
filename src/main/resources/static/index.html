@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tienda Java + MongoDB</title>
+<style>
+body { font-family: Arial; max-width: 960px; margin: 40px auto; padding: 0 20px; }
+h1 { color: #E76F00; border-bottom: 2px solid #E76F00; padding-bottom: 8px; margin: 0; }
+.barra-superior { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E76F00; padding-bottom: 8px; margin-bottom: 16px; }
+.barra-superior h1 { border-bottom: none; padding-bottom: 0; }
+.area-sesion { display: flex; gap: 10px; align-items: center; }
+.usuario-activo { font-size: 14px; color: #666; }
+.btn { padding: 7px 16px; border: 1px solid #ddd; border-radius: 99px; cursor: pointer; background: #fff; font-size: 13px; }
+.btn:hover { background: #FFF7ED; border-color: #E76F00; }
+.btn-primario { background: #E76F00; color: #fff; border-color: #E76F00; }
+.btn-primario:hover { background: #d96500; }
+.filtros { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
+.filtros button { padding: 7px 16px; border: 1px solid #ddd; border-radius: 99px; cursor: pointer; background: #fff; font-size: 13px; }
+.filtros button:hover { background: #FFF7ED; border-color: #E76F00; }
+.filtros button.active { background: #E76F00; color: #fff; border-color: #E76F00; }
+table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+th { background: #E76F00; color: #fff; padding: 10px; text-align: left; }
+td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+tr:hover { background: #FFF7ED; }
+.badge-true { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 99px; font-size: 12px; }
+.badge-false { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 99px; font-size: 12px; }
+#info { font-size: 13px; color: #666; margin-bottom: 8px; }
+.form-agregar { background: #FFF7ED; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.form-agregar h3 { margin: 0 0 12px; color: #E76F00; }
+.form-agregar input { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; }
+.form-agregar button { padding: 6px 16px; background: #E76F00; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-accion { padding: 4px 10px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: #fff; font-size: 12px; margin-right: 4px; }
+.btn-accion:hover { border-color: #E76F00; color: #E76F00; }
+.btn-danger { color: #b91c1c; }
+.btn-danger:hover { border-color: #b91c1c; color: #b91c1c; }
+[hidden] { display: none !important; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal-contenido { background: #fff; border-radius: 8px; padding: 24px; width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+.modal-contenido h3 { margin: 0 0 16px; color: #E76F00; }
+.modal-contenido input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; }
+.modal-contenido button { width: 100%; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.modal-contenido .btn-entrar { background: #E76F00; color: #fff; border: none; margin-bottom: 6px; }
+.modal-contenido .btn-entrar:hover { background: #d96500; }
+.modal-contenido .btn-link { background: none; border: none; color: #E76F00; text-decoration: underline; font-size: 13px; margin-bottom: 6px; }
+.modal-contenido .btn-cerrar { background: #fff; border: 1px solid #ddd; margin-top: 6px; }
+.msg-modal { font-size: 13px; color: #b91c1c; min-height: 16px; margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<div class="barra-superior">
+    <h1>Tienda &mdash; Java + MongoDB</h1>
+    <div class="area-sesion">
+        <span id="usuario-activo" class="usuario-activo" hidden></span>
+        <button id="btn-login" class="btn btn-primario" onclick="abrirLogin()">Iniciar sesión</button>
+        <button id="btn-cerrar-sesion" class="btn" onclick="cerrarSesion()" hidden>Cerrar sesión</button>
+    </div>
+</div>
+
+<div id="modal-login" class="modal" hidden>
+    <div class="modal-contenido">
+        <h3>Iniciar sesión</h3>
+        <input id="inp-login-user" placeholder="Usuario">
+        <input id="inp-login-pass" type="password" placeholder="Contraseña">
+        <p id="msg-login" class="msg-modal"></p>
+        <button class="btn-entrar" onclick="login()">Entrar</button>
+        <button class="btn-link" onclick="mostrarRegistro()">¿No tienes cuenta? Regístrate</button>
+        <button class="btn-cerrar" onclick="cerrarModal()">Cerrar</button>
+    </div>
+</div>
+
+<div id="modal-registro" class="modal" hidden>
+    <div class="modal-contenido">
+        <h3>Crear cuenta</h3>
+        <input id="inp-reg-user" placeholder="Usuario">
+        <input id="inp-reg-nombre" placeholder="Nombre">
+        <input id="inp-reg-pass" type="password" placeholder="Contraseña (mínimo 8)">
+        <p id="msg-registro" class="msg-modal"></p>
+        <button class="btn-entrar" onclick="registro()">Registrarme</button>
+        <button class="btn-link" onclick="mostrarLogin()">Ya tengo cuenta</button>
+        <button class="btn-cerrar" onclick="cerrarModal()">Cerrar</button>
+    </div>
+</div>
+
+<div class="form-agregar" id="form-agregar" hidden>
+    <h3 id="titulo-form">Agregar producto</h3>
+    <div class="form-row">
+        <input id="inp-nombre" placeholder="Nombre">
+        <input id="inp-precio" placeholder="Precio" type="number">
+        <input id="inp-cat" placeholder="Categoria">
+        <input id="inp-marca" placeholder="Marca">
+        <button id="btn-guardar" onclick="guardarProducto()">Agregar</button>
+        <button id="btn-cancelar-edicion" class="btn-secundario" onclick="cancelarEdicion()" hidden>Cancelar</button>
+    </div>
+</div>
+
+<div class="filtros">
+    <button class="active" onclick="cargar('/api/productos', this)">Todos</button>
+    <button onclick="cargar('/api/productos/activos', this)">Solo activos</button>
+    <button onclick="cargar('/api/productos/categoria/periféricos', this)">Perifericos</button>
+    <button onclick="cargar('/api/productos/categoria/audio', this)">Audio</button>
+    <button onclick="cargar('/api/productos/categoria/almacenamiento', this)">Almacenamiento</button>
+</div>
+
+<div id="info">Cargando...</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nombre</th><th>Precio</th><th>Categoria</th>
+            <th>Stock</th><th>Marca</th><th>Estado</th>
+            <th id="th-acciones" hidden>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+</table>
+
+<script>
+let token = localStorage.getItem('tienda_token') || null;
+let editandoId = null;
+
+function estaLogueado() { return !!token; }
+
+async function api(url, opciones) {
+    opciones = opciones || {};
+    opciones.headers = opciones.headers || {};
+    if (token) opciones.headers['Authorization'] = 'Bearer ' + token;
+    const respuesta = await fetch(url, opciones);
+    if (respuesta.status === 401) {
+        cerrarSesion();
+        alert('Tu sesión expiró. Inicia sesión de nuevo.');
+        throw new Error('Sesion expirada');
+    }
+    return respuesta;
+}
+
+function cargar(url, btn) {
+    document.querySelectorAll('.filtros button').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    fetch(url)
+        .then(respuesta => respuesta.json())
+        .then(productos => {
+            document.getElementById('info').textContent = 'Mostrando ' + productos.length + ' productos';
+            const tbody = document.getElementById('tbody');
+            tbody.innerHTML = '';
+            productos.forEach(p => {
+                const fila = document.createElement('tr');
+
+                const tdNombre = document.createElement('td');
+                tdNombre.textContent = p.nombre;
+                const tdPrecio = document.createElement('td');
+                tdPrecio.textContent = '$ ' + (p.precio ? p.precio.toLocaleString() : 0);
+                const tdCategoria = document.createElement('td');
+                tdCategoria.textContent = p.categoria || '-';
+                const tdStock = document.createElement('td');
+                tdStock.textContent = p.stock || 0;
+                const tdMarca = document.createElement('td');
+                tdMarca.textContent = p.marca || '-';
+                const tdEstado = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = 'badge-' + p.activo;
+                badge.textContent = p.activo ? 'Activo' : 'Inactivo';
+                tdEstado.appendChild(badge);
+
+                fila.appendChild(tdNombre);
+                fila.appendChild(tdPrecio);
+                fila.appendChild(tdCategoria);
+                fila.appendChild(tdStock);
+                fila.appendChild(tdMarca);
+                fila.appendChild(tdEstado);
+
+                if (estaLogueado()) {
+                    const tdAcciones = document.createElement('td');
+                    tdAcciones.innerHTML =
+                        '<button class="btn-accion" onclick="editarProducto(\'' + p.id + '\')">Editar</button>' +
+                        '<button class="btn-accion btn-danger" onclick="eliminarProducto(\'' + p.id + '\')">Eliminar</button>';
+                    fila.appendChild(tdAcciones);
+                }
+
+                tbody.appendChild(fila);
+            });
+        })
+        .catch(err => {
+            document.getElementById('info').textContent = 'Error: ' + err;
+        });
+}
+
+async function login() {
+    const username = document.getElementById('inp-login-user').value;
+    const password = document.getElementById('inp-login-pass').value;
+    const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        document.getElementById('msg-login').textContent = data.error || 'No se pudo iniciar sesión';
+        return;
+    }
+    token = data.token;
+    localStorage.setItem('tienda_token', token);
+    cerrarModal();
+    actualizarVistaSesion();
+    cargar('/api/productos', null);
+}
+
+async function registro() {
+    const username = document.getElementById('inp-reg-user').value;
+    const nombre = document.getElementById('inp-reg-nombre').value;
+    const password = document.getElementById('inp-reg-pass').value;
+    const msgRegistro = document.getElementById('msg-registro');
+    if (!/^(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]+$/.test(username)) {
+        msgRegistro.textContent = 'El usuario debe tener letras y numeros, sin caracteres especiales';
+        return;
+    }
+    if (password.length < 8 || password.length > 72) {
+        msgRegistro.textContent = 'La contraseña debe tener entre 8 y 72 caracteres';
+        return;
+    }
+    const res = await fetch('/api/auth/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, nombre, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        document.getElementById('msg-registro').textContent = data.error || 'No se pudo crear la cuenta';
+        return;
+    }
+    token = data.token;
+    localStorage.setItem('tienda_token', token);
+    cerrarModal();
+    actualizarVistaSesion();
+    cargar('/api/productos', null);
+}
+
+function cerrarSesion() {
+    token = null;
+    editandoId = null;
+    localStorage.removeItem('tienda_token');
+    document.getElementById('inp-login-pass').value = '';
+    document.getElementById('inp-reg-pass').value = '';
+    cancelarEdicion();
+    actualizarVistaSesion();
+    cargar('/api/productos', null);
+}
+
+function actualizarVistaSesion() {
+    document.getElementById('btn-login').hidden = estaLogueado();
+    document.getElementById('btn-cerrar-sesion').hidden = !estaLogueado();
+    document.getElementById('form-agregar').hidden = !estaLogueado();
+    document.getElementById('th-acciones').hidden = !estaLogueado();
+    const usuarioActivo = document.getElementById('usuario-activo');
+    usuarioActivo.hidden = !estaLogueado();
+    if (estaLogueado()) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        usuarioActivo.textContent = 'Sesión de ' + (payload.sub || '');
+    }
+}
+
+function abrirLogin() {
+    document.getElementById('msg-login').textContent = '';
+    document.getElementById('msg-registro').textContent = '';
+    document.getElementById('modal-registro').hidden = true;
+    document.getElementById('modal-login').hidden = false;
+}
+
+function mostrarLogin() {
+    document.getElementById('modal-registro').hidden = true;
+    document.getElementById('modal-login').hidden = false;
+}
+
+function mostrarRegistro() {
+    document.getElementById('modal-login').hidden = true;
+    document.getElementById('modal-registro').hidden = false;
+}
+
+function cerrarModal() {
+    document.getElementById('modal-login').hidden = true;
+    document.getElementById('modal-registro').hidden = true;
+}
+
+async function guardarProducto() {
+    const body = {
+        nombre: document.getElementById('inp-nombre').value,
+        precio: parseFloat(document.getElementById('inp-precio').value),
+        categoria: document.getElementById('inp-cat').value,
+        marca: document.getElementById('inp-marca').value,
+        activo: true
+    };
+    const url = editandoId ? '/api/productos/' + editandoId : '/api/productos';
+    const metodo = editandoId ? 'PUT' : 'POST';
+
+    try {
+        const res = await api(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            alert(data.error || 'No se pudo guardar el producto');
+            return;
+        }
+        cancelarEdicion();
+        cargar('/api/productos', null);
+    } catch (err) {
+        // la sesion ya expiro, el mensaje lo muestra api()
+    }
+}
+
+function editarProducto(id) {
+    fetch('/api/productos/' + id)
+        .then(r => r.json())
+        .then(p => {
+            editandoId = p.id;
+            document.getElementById('inp-nombre').value = p.nombre;
+            document.getElementById('inp-precio').value = p.precio;
+            document.getElementById('inp-cat').value = p.categoria || '';
+            document.getElementById('inp-marca').value = p.marca || '';
+            document.getElementById('titulo-form').textContent = 'Editar producto';
+            document.getElementById('btn-guardar').textContent = 'Guardar cambios';
+            document.getElementById('btn-cancelar-edicion').hidden = false;
+            document.getElementById('form-agregar').scrollIntoView({ behavior: 'smooth' });
+        });
+}
+
+function cancelarEdicion() {
+    editandoId = null;
+    document.getElementById('inp-nombre').value = '';
+    document.getElementById('inp-precio').value = '';
+    document.getElementById('inp-cat').value = '';
+    document.getElementById('inp-marca').value = '';
+    document.getElementById('titulo-form').textContent = 'Agregar producto';
+    document.getElementById('btn-guardar').textContent = 'Agregar';
+    document.getElementById('btn-cancelar-edicion').hidden = true;
+}
+
+async function eliminarProducto(id) {
+    if (!confirm('¿Eliminar este producto?')) return;
+    try {
+        const res = await api('/api/productos/' + id, { method: 'DELETE' });
+        if (res.ok) {
+            cargar('/api/productos', null);
+        } else {
+            alert('No se pudo eliminar el producto');
+        }
+    } catch (err) {
+        // la sesion ya expiro, el mensaje lo muestra api()
+    }
+}
+
+actualizarVistaSesion();
+cargar('/api/productos', null);
+</script>
+
+</body>
+</html>

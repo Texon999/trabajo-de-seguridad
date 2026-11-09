@@ -86,11 +86,11 @@ La aplicacion queda disponible en `http://localhost:8080`.
 
 | Metodo | Ruta | Descripcion | Seguridad |
 |---|---|---|---|
-| GET | `/api/productos` | Lista todos los productos | Requiere token |
-| GET | `/api/productos/{id}` | Consulta un producto por identificador | Requiere token |
-| GET | `/api/productos/activos` | Lista solo productos activos | Requiere token |
-| GET | `/api/productos/categoria/{cat}` | Filtra productos por categoria | Requiere token |
-| GET | `/api/productos/precio?min=&max=` | Filtra productos por rango de precio | Requiere token |
+| GET | `/api/productos` | Lista todos los productos (catálogo público) | Publica |
+| GET | `/api/productos/{id}` | Consulta un producto por identificador | Publica |
+| GET | `/api/productos/activos` | Lista solo productos activos | Publica |
+| GET | `/api/productos/categoria/{cat}` | Filtra productos por categoria | Publica |
+| GET | `/api/productos/precio?min=&max=` | Filtra productos por rango de precio | Publica |
 | POST | `/api/productos` | Crea un producto (registra usuario e IP) | Requiere token |
 | PUT | `/api/productos/{id}` | Actualiza un producto | Requiere token |
 | DELETE | `/api/productos/{id}` | Elimina un producto | Requiere token |
@@ -101,7 +101,44 @@ Los endpoints protegidos requieren la cabecera:
 Authorization: Bearer <token>
 ```
 
-## Pruebas
+## Politica de acceso (rutas públicas vs protegidas)
+
+La política está definida en `src/main/java/com/tienda/security/SecurityConfig.java` y se valida con las pruebas de `SeguridadApiTest`:
+
+- **Públicas (sin token):** `POST /api/auth/registro`, `POST /api/auth/login`, y todo `GET /api/productos/**` (catálogo de lectura).
+- **Protegidas (token válido):** cualquier escritura sobre productos (`POST`, `PUT`, `DELETE /api/productos/**`) y cualquier otro endpoint no listado como público.
+
+El catálogo de lectura es público porque el propósito del proyecto es una tienda donde los productos pueden verse sin cuenta; modificar productos requiere autenticación. Esta política es coherente entre el código (`SecurityConfig`) y las pruebas (`SeguridadApiTest` verifica que `GET /api/productos` sea público y que escribir sin token devuelva 401).
+
+## Configuración segura de JWT
+
+En `.env.example` se elimina cualquier valor de ejemplo para `JWT_SECRET`. Genera una clave segura antes de arrancar, por ejemplo:
+
+```bash
+openssl rand -base64 48
+```
+
+Luego define `JWT_SECRET` en el entorno del sistema (o en tu IDE) y cópiala a `.env` (este archivo queda excluido del repositorio por seguridad). Nunca uses valores cortos, predecibles ni credenciales reales en el repositorio.
+
+## Ejecución
+
+Requiere JDK 17 o superior y MongoDB 6.0 o superior en ejecución local. No es necesario instalar Maven: el proyecto incluye Maven Wrapper (`mvnw`).
+
+```bash
+# 1. Copiar plantilla de entorno y definir JWT_SECRET + MONGO_URI
+copy .env.example .env      # Windows (cmd/PowerShell)
+cp .env.example .env        # Linux/macOS
+
+# 2. Arrancar la aplicación
+.\mvnw.cmd spring-boot:run   # Windows
+./mvnw spring-boot:run       # Linux/macOS
+
+# Queda disponible en http://localhost:8080
+
+# 3. Ejecutar pruebas
+.\mvnw.cmd test              # Windows
+./mvnw test                  # Linux/macOS
+```
 
 Ejecutar la suite de pruebas unitarias y de integracion:
 
